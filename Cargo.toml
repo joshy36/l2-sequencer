@@ -1,0 +1,17 @@
+[package]
+name = "l2-sequencer"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "l2_sequencer"
+path = "src/lib.rs"
+
+[[bin]]
+name = "l2-sequencer"
+path = "src/main.rs"
+
+[dependencies]
+alloy = { version = "0.11.0", features = ["full"] }
+eyre = "0.6.12"
+tokio = "1.43.0"
