@@ -8,11 +8,14 @@ use crate::types::AppState;
 use alloy::providers::ProviderBuilder;
 use axum::{routing::post, Router};
 use services::queue_service::setup_queue;
+use std::env;
 use std::error::Error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let rpc_url = "https://eth.merkle.io".parse()?;
+    let rpc_url = env::var("RPC_URL")
+        .unwrap_or_else(|_| "https://eth.merkle.io".to_string())
+        .parse()?;
     let provider = ProviderBuilder::new().on_http(rpc_url);
 
     let queue_provider = provider.clone();
