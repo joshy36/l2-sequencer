@@ -1,34 +1,40 @@
-use alloy::primitives::{Address, ChainId, U256};
+mod api;
+mod models;
+mod services;
+mod types;
+
+use crate::api::handler::send_transaction;
+use crate::types::AppState;
 use alloy::providers::ProviderBuilder;
-use l2_sequencer::{L2Transaction, Queue};
+use axum::{routing::post, Router};
+use services::queue_service::setup_queue;
 use std::error::Error;
 
-#[tokio::main(flavor = "current_thread")]
+#[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let rpc_url = "https://eth.merkle.io".parse()?;
     let provider = ProviderBuilder::new().on_http(rpc_url);
 
-    let mut queue = Queue::new(provider);
+    let queue_provider = provider.clone();
+    let (queue_handle, mut processor) = setup_queue(queue_provider);
 
-    let transaction = L2Transaction::new(
-        0, // nonce: typical transaction count for an account
-        Address::from([0x42; 20]),
-        Some(Address::from([0x23; 20])), // For contract creation, this would be None
-        U256::from(1_000_000_000_000_000_000u64), // value: 1 ETH in wei
-        vec![0x68, 0x65, 0x6c, 0x6c, 0x6f].into(), // data: "hello" in hex, converted to Bytes
-        21_000,                          // gas_limit: standard ETH transfer gas limit
-        U256::from(30_000_000_000u64),   // gas_price: 30 gwei
-        Some(ChainId::from(42161u64)),   // chain_id: Arbitrum One
-        0,                               // l1_block_number: starting from 0 or get from provider
-        U256::from(1_000_000u64),        // submission_fee: example fee
-    );
+    // Spawn the processor task
+    tokio::spawn(async move {
+        processor.run().await;
+    });
 
-    match queue.process_transaction(transaction.clone()).await {
-        Ok(()) => println!("Transaction processed successfully!"),
-        Err(e) => println!("Transaction processing failed: {}", e),
-    }
+    let state = AppState {
+        queue: queue_handle,
+        provider,
+    };
 
-    queue.print_queue_state();
+    let app = Router::new()
+        .route("/send_transaction", post(send_transaction))
+        .with_state(state);
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
+    println!("Server running on http://0.0.0.0:3000");
+    axum::serve(listener, app).await?;
 
     Ok(())
 }
