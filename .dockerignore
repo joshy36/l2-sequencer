@@ -1,0 +1,15 @@
+# build artifacts
+target/
+
+# git stuff
+.git/
+.gitignore
+
+# env files 
+.env
+.env.*
+
+# editor stuff
+.vscode/
+.idea/
+*.swp
