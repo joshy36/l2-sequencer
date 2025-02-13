@@ -1,12 +1,10 @@
-FROM rust:1.75-slim as builder
+FROM rust:1.84-slim as builder
 
 WORKDIR /app
 
-# Create blank project
 RUN cargo new --bin app
 WORKDIR /app/app
 
-# Copy manifests
 COPY Cargo.lock Cargo.toml ./
 
 # Cache dependencies
