@@ -1,18 +1,16 @@
-mod api;
-mod models;
-mod services;
-mod types;
-
-use crate::api::handler::send_transaction;
-use crate::types::AppState;
 use alloy::providers::ProviderBuilder;
+use axum::middleware;
 use axum::{routing::post, Router};
-use services::queue_service::setup_queue;
+use sequencer::api::auth::auth_middleware;
+use sequencer::api::handler::send_transaction;
+use sequencer::services::queue_service::setup_queue;
+use sequencer::types::AppState;
 use std::env;
 use std::error::Error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    dotenv::dotenv().ok();
     let rpc_url = env::var("RPC_URL")
         .unwrap_or_else(|_| "https://eth.merkle.io".to_string())
         .parse()?;
@@ -33,6 +31,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let app = Router::new()
         .route("/send_transaction", post(send_transaction))
+        .layer(middleware::from_fn(auth_middleware))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;

@@ -10,8 +10,8 @@ endpoint: `POST /send_transaction`
     "data": "hex string for calldata",
     "gas_limit": "hex gas limit",
     "gas_price": "hex gas price in wei",
-    "chain_id": 42161, // arbitrum one mainnet
-    "l1_block_number": 0, // afaict this is unused rn but required
+    "chain_id": 42161,
+    "l1_block_number": 0,
     "submission_fee": "hex string for l1 submission fee"
   }
 }
@@ -21,6 +21,7 @@ Example Request
 
 curl -X POST http://localhost:3000/send_transaction \
 -H "Content-Type: application/json" \
+-H "Authorization: Bearer 7a28b4cd5e614a5688b36639c4af959d9641def00f33f8951da1fa2bf0726359" \
 -d '{
 "raw_tx": {
 "nonce": "0x0",

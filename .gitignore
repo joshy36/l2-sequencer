@@ -1,1 +1,24 @@
+# rust builds
 /target
+/debug
+/release
+**/*.rs.bk
+*.pdb
+
+# env files
+.env
+.env.*
+!.env.example
+
+# editor stuff
+.vscode/
+.idea/
+*.swp
+*~
+
+# os files
+.DS_Store
+Thumbs.db
+
+# fly deploy artifacts
+.fly/
