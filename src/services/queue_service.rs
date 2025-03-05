@@ -9,9 +9,11 @@ pub enum QueueCommand {
         transaction: L2Transaction,
         response: oneshot::Sender<Result<(), String>>,
     },
+    InitiateBatch {
+        response: oneshot::Sender<Result<(), String>>,
+    },
 }
 
-// Handler that will be shared with API routes
 #[derive(Clone)]
 pub struct QueueHandle {
     command_tx: mpsc::Sender<QueueCommand>,
@@ -28,6 +30,19 @@ impl QueueHandle {
         self.command_tx
             .send(QueueCommand::SubmitTransaction {
                 transaction,
+                response: response_tx,
+            })
+            .await
+            .map_err(|e| e.to_string())?;
+
+        response_rx.await.map_err(|e| e.to_string())?
+    }
+
+    pub async fn batch_transactions(&self) -> Result<(), String> {
+        let (response_tx, response_rx) = oneshot::channel();
+
+        self.command_tx
+            .send(QueueCommand::InitiateBatch {
                 response: response_tx,
             })
             .await
@@ -61,12 +76,17 @@ impl<T: Provider> QueueProcessor<T> {
                     let _ = response.send(Ok(()));
                     self.queue.print_queue_state();
                 }
+                QueueCommand::InitiateBatch { response } => {
+                    let _ = self.queue.batch_transactions();
+                    let _ = response.send(Ok(()));
+                    println!("Batch sent!");
+                    self.queue.print_queue_state();
+                }
             }
         }
     }
 }
 
-// Helper function to set up the system
 pub fn setup_queue<T: Provider>(provider: T) -> (QueueHandle, QueueProcessor<T>) {
     let (command_tx, command_rx) = mpsc::channel(100); // Buffer size of 100
     let handle = QueueHandle::new(command_tx);

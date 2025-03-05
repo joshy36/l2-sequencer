@@ -19,7 +19,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let queue_provider = provider.clone();
     let (queue_handle, mut processor) = setup_queue(queue_provider);
 
-    // Spawn the processor task
     tokio::spawn(async move {
         processor.run().await;
     });

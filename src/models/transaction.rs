@@ -1,8 +1,9 @@
 use alloy::consensus::Transaction;
 use alloy::eips::{eip2930::AccessList, eip7702::SignedAuthorization, Typed2718};
 use alloy::primitives::{Address, Bytes, ChainId, TxKind, B256, U256};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct L2Transaction {
     // Core fields
     pub nonce: u64,
