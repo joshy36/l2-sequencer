@@ -3,7 +3,12 @@ use crate::services::parser::{parse_raw_transaction, RawTransactionData};
 use crate::types::AppState;
 use alloy::primitives::U256;
 use alloy::providers::Provider;
-use axum::{extract::State, Json};
+use axum::extract::ws::{Message, WebSocket};
+use axum::{
+    extract::{State, WebSocketUpgrade},
+    response::IntoResponse,
+    Json,
+};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
@@ -73,7 +78,7 @@ pub async fn send_transaction(
             println!("Queue error: {}", e);
             Json(ErrorResponse {
                 error: e.to_string(),
-                code: "PARSE_ERROR".to_string(),
+                code: "QUEUE_ERROR".to_string(),
             })
         })?;
 
@@ -84,6 +89,27 @@ pub async fn send_transaction(
     });
 
     Ok(response)
+}
+
+pub async fn transaction_feed(
+    State(state): State<AppState>,
+    ws: WebSocketUpgrade,
+) -> impl IntoResponse {
+    ws.on_upgrade(|socket| handle_websocket(socket, state))
+}
+
+async fn handle_websocket(mut socket: WebSocket, state: AppState) {
+    let mut feed_rx = state.queue.subscribe();
+
+    // Stream transactions to the client
+    while let Ok(transaction) = feed_rx.recv().await {
+        let serialized =
+            serde_json::to_string(&transaction).expect("Failed to serialize transaction"); // Ensure L2Transaction is serializable
+        if socket.send(Message::Text(serialized.into())).await.is_err() {
+            // Client disconnected
+            break;
+        }
+    }
 }
 
 fn validate_gas_limit(tx: &L2Transaction) -> Result<(), &'static str> {

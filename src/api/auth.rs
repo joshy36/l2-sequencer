@@ -15,6 +15,17 @@ struct AuthError {
 }
 
 pub async fn auth_middleware(req: Request, next: Next) -> Response {
+    // Skip auth for WebSocket upgrades
+    if req
+        .headers()
+        .get("upgrade")
+        .map(|v| v == "websocket")
+        .unwrap_or(false)
+    {
+        println!("WebSocket upgrade detected, skipping auth");
+        return next.run(req).await;
+    }
+
     let auth_header = match req.headers().get(header::AUTHORIZATION) {
         Some(header) => header.to_str().unwrap_or(""),
         None => {

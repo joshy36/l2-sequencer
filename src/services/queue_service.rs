@@ -1,6 +1,6 @@
 use crate::models::{L2Transaction, Queue};
 use alloy::providers::Provider;
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::{broadcast, mpsc, oneshot};
 
 // Commands that can be sent to the queue
 #[derive(Debug)]
@@ -17,15 +17,24 @@ pub enum QueueCommand {
 #[derive(Clone)]
 pub struct QueueHandle {
     command_tx: mpsc::Sender<QueueCommand>,
+    feed_tx: broadcast::Sender<L2Transaction>,
 }
 
 impl QueueHandle {
-    pub fn new(command_tx: mpsc::Sender<QueueCommand>) -> Self {
-        Self { command_tx }
+    pub fn new(
+        command_tx: mpsc::Sender<QueueCommand>,
+        feed_tx: broadcast::Sender<L2Transaction>,
+    ) -> Self {
+        Self {
+            command_tx,
+            feed_tx,
+        }
     }
 
     pub async fn submit_transaction(&self, transaction: L2Transaction) -> Result<(), String> {
         let (response_tx, response_rx) = oneshot::channel();
+
+        let tx = transaction.clone();
 
         self.command_tx
             .send(QueueCommand::SubmitTransaction {
@@ -34,6 +43,8 @@ impl QueueHandle {
             })
             .await
             .map_err(|e| e.to_string())?;
+
+        let _ = self.feed_tx.send(tx);
 
         response_rx.await.map_err(|e| e.to_string())?
     }
@@ -49,6 +60,10 @@ impl QueueHandle {
             .map_err(|e| e.to_string())?;
 
         response_rx.await.map_err(|e| e.to_string())?
+    }
+
+    pub fn subscribe(&self) -> broadcast::Receiver<L2Transaction> {
+        self.feed_tx.subscribe()
     }
 }
 
@@ -88,8 +103,9 @@ impl<T: Provider> QueueProcessor<T> {
 }
 
 pub fn setup_queue<T: Provider>(provider: T) -> (QueueHandle, QueueProcessor<T>) {
-    let (command_tx, command_rx) = mpsc::channel(100); // Buffer size of 100
-    let handle = QueueHandle::new(command_tx);
+    let (command_tx, command_rx) = mpsc::channel(100);
+    let (feed_tx, _feed_rx) = broadcast::channel(100);
+    let handle = QueueHandle::new(command_tx, feed_tx);
     let processor = QueueProcessor::new(provider, command_rx);
     (handle, processor)
 }

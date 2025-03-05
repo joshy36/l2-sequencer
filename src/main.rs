@@ -1,8 +1,12 @@
 use alloy::providers::ProviderBuilder;
 use axum::middleware;
-use axum::{routing::post, Router};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 use sequencer::api::auth::auth_middleware;
-use sequencer::api::handler::send_transaction;
+use sequencer::api::cors::create_cors_middleware;
+use sequencer::api::handler::{send_transaction, transaction_feed};
 use sequencer::services::queue_service::setup_queue;
 use sequencer::types::AppState;
 use std::env;
@@ -30,11 +34,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let app = Router::new()
         .route("/send_transaction", post(send_transaction))
+        .route("/transaction_feed", get(transaction_feed))
         .layer(middleware::from_fn(auth_middleware))
+        .layer(create_cors_middleware())
         .with_state(state);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
-    println!("Server running on http://0.0.0.0:3000");
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await?;
+    println!("Server running on http://0.0.0.0:3001");
     axum::serve(listener, app).await?;
 
     Ok(())
