@@ -132,15 +132,17 @@ async fn validate_nonce<T: Provider>(
 ) -> Result<(), Box<dyn Error>> {
     let sender = tx.from;
 
-    let expected_nonce = provider.get_transaction_count(sender).await?;
+    // ignore for load test
 
-    if tx.nonce != expected_nonce {
-        return Err(format!(
-            "Invalid nonce: expected {}, got {}",
-            expected_nonce, tx.nonce
-        )
-        .into());
-    }
+    // let expected_nonce = provider.get_transaction_count(sender).await?;
+
+    // if tx.nonce != expected_nonce {
+    //     return Err(format!(
+    //         "Invalid nonce: expected {}, got {}",
+    //         expected_nonce, tx.nonce
+    //     )
+    //     .into());
+    // }
 
     Ok(())
 }

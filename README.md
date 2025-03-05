@@ -19,7 +19,7 @@ endpoint: `POST /send_transaction`
 
 Example Request
 
-curl -X POST http://localhost:3000/send_transaction \
+curl -X POST http://localhost:3001/send_transaction \
 -H "Content-Type: application/json" \
 -H "Authorization: Bearer 7a28b4cd5e614a5688b36639c4af959d9641def00f33f8951da1fa2bf0726359" \
 -d '{
