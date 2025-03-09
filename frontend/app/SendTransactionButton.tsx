@@ -16,6 +16,12 @@ interface RawTransaction {
   submission_fee: string;
 }
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://0.0.0.0:3001';
+const WS_BASE_URL = BASE_URL.replace('http://', 'ws://').replace(
+  'https://',
+  'wss://'
+);
+
 export default function SendTransactionButton() {
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
@@ -66,10 +72,9 @@ export default function SendTransactionButton() {
   }
 
   useEffect(() => {
-    // Set initial preview on client-side mount
     setTransactionPreview(generatePreview());
 
-    const ws = new WebSocket('ws://0.0.0.0:3001/transaction_feed');
+    const ws = new WebSocket(`${WS_BASE_URL}/transaction_feed`);
 
     ws.onopen = () => setTransactionCount(0);
     ws.onmessage = (event) => {
@@ -96,7 +101,7 @@ export default function SendTransactionButton() {
       setStatus('');
       setError('');
 
-      const response = await fetch('http://0.0.0.0:3001/send_transaction', {
+      const response = await fetch(`${BASE_URL}/send_transaction`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
