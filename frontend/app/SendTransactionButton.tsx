@@ -19,7 +19,7 @@ interface RawTransaction {
 export default function SendTransactionButton() {
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<RawTransaction[]>([]);
   const [nonce, setNonce] = useState(0);
   const [transactionCount, setTransactionCount] = useState(0);
   const [transactionPreview, setTransactionPreview] =

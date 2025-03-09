@@ -2,13 +2,13 @@ config:
   target: 'http://0.0.0.0:3001' # Your backend
   phases:
     - duration: 20 # 20 seconds
-      arrivalRate: 10 # 10 tx/sec
+      arrivalRate: 100 # 100 tx/sec
       name: 'Low Load'
     - duration: 20 # 20 seconds
-      arrivalRate: 50 # 50 tx/sec
+      arrivalRate: 500
       name: 'Medium Load'
     - duration: 20 # 20 seconds
-      arrivalRate: 100 # 100 tx/sec
+      arrivalRate: 1000
       name: 'High Load'
   defaults:
     headers:

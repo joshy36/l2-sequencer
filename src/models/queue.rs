@@ -15,7 +15,7 @@ impl<T: Provider> Queue<T> {
         Self {
             provider,
             transactions: Vec::new(),
-            batch_size: 5,
+            batch_size: 50,
         }
     }
 
